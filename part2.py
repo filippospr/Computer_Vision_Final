@@ -4,6 +4,8 @@ import tarfile
 import tempfile
 from six.moves import urllib
 
+
+from sklearn.decomposition import PCA
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
 import numpy as np
@@ -16,9 +18,9 @@ import tensorflow as tf
 
 class DeepLabModel(object):
   """Class to load deeplab model and run inference."""
-
+  
   INPUT_TENSOR_NAME = 'ImageTensor:0'
-  OUTPUT_TENSOR_NAME = 'SemanticPredictions:0'
+  OUTPUT_TENSOR_NAME = 'concat_projection/BatchNorm/FusedBatchNorm:0'
   INPUT_SIZE = 513
   FROZEN_GRAPH_NAME = 'frozen_inference_graph'
 
@@ -44,6 +46,13 @@ class DeepLabModel(object):
       tf.import_graph_def(graph_def, name='')
 
     self.sess = tf.Session(graph=self.graph)
+    writer = tf.summary.FileWriter('C:/Users/oem/Documents/GitHub/crashcourse-tensorflow')
+    writer.add_graph(self.sess.graph)
+    array_of_operations=(self.sess.graph.get_operations())
+    # print(type(array_of_operations))
+    # for i in array_of_operations:
+    #   tmp=np.array(i.values())
+    #   print(tmp)
       
 
 
@@ -64,7 +73,15 @@ class DeepLabModel(object):
     batch_seg_map = self.sess.run(
         self.OUTPUT_TENSOR_NAME,
         feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
-    seg_map = batch_seg_map[0]
+    
+    #find deepfeatures from middle layer of the graph
+    deepfeats = batch_seg_map[0]
+    N = deepfeats.shape[0]*deepfeats.shape[1]
+    C = deepfeats.shape[-1]
+    X = np.reshape(deepfeats, [N, C])
+    Xreduced = PCA(n_components=3).fit_transform(X)
+    seg_map=np.reshape(Xreduced, [deepfeats.shape[0], deepfeats.shape[1], 3])
+    print(seg_map.shape)
     return resized_image, seg_map
 
 
@@ -122,21 +139,10 @@ def vis_segmentation(image, seg_map):
   plt.title('input image')
 
   plt.subplot(grid_spec[1])
-  seg_image = label_to_color_image(seg_map).astype(np.uint8)
-  plt.imshow(seg_image)
+  plt.imshow(seg_map)
   plt.axis('off')
-  plt.title('segmentation map')
-
-
-  unique_labels = np.unique(seg_map)
-  ax = plt.subplot(grid_spec[2])
-  plt.imshow(
-      FULL_COLOR_MAP[unique_labels].astype(np.uint8), interpolation='nearest')
-  ax.yaxis.tick_right()
-  plt.yticks(range(len(unique_labels)), LABEL_NAMES[unique_labels])
-  plt.xticks([], [])
-  ax.tick_params(width=0.0)
-  plt.grid('off')
+  plt.title('PCA analysis')
+  
   plt.show()
 
 
