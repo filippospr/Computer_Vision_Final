@@ -4,7 +4,7 @@ import tarfile
 import tempfile
 from six.moves import urllib
 
-
+from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
@@ -48,7 +48,7 @@ class DeepLabModel(object):
     self.sess = tf.Session(graph=self.graph)
     writer = tf.summary.FileWriter('C:/Users/oem/Documents/GitHub/crashcourse-tensorflow')
     writer.add_graph(self.sess.graph)
-    array_of_operations=(self.sess.graph.get_operations())
+    # array_of_operations=(self.sess.graph.get_operations())
     # print(type(array_of_operations))
     # for i in array_of_operations:
     #   tmp=np.array(i.values())
@@ -79,10 +79,14 @@ class DeepLabModel(object):
     N = deepfeats.shape[0]*deepfeats.shape[1]
     C = deepfeats.shape[-1]
     X = np.reshape(deepfeats, [N, C])
-    Xreduced = PCA(n_components=3).fit_transform(X)
-    pca_reshaped=np.reshape(Xreduced, [deepfeats.shape[0], deepfeats.shape[1], 3])
-    print(pca_reshaped.shape)
-    return resized_image, pca_reshaped
+    Xreduced = PCA(n_components=8).fit_transform(X)
+    #reshape the result of pca from 8 into 2 dimensions
+    pca_res_reshaped=np.reshape(Xreduced, [deepfeats.shape[0]*deepfeats.shape[1], 8])
+    kmeans = KMeans(n_clusters=2).fit(pca_res_reshaped)
+    reshaped_labels=np.reshape(kmeans.labels_,[deepfeats.shape[0],deepfeats.shape[1]])
+    
+    
+    return resized_image,reshaped_labels
 
 
 def create_pascal_label_colormap():
@@ -141,7 +145,7 @@ def vis_segmentation(image, seg_map):
   plt.subplot(grid_spec[1])
   plt.imshow(seg_map)
   plt.axis('off')
-  plt.title('PCA analysis')
+  plt.title('K-Means')
   
   plt.show()
 
@@ -202,4 +206,4 @@ def run_visualization(image_name):
 ΙMAGES_names=[sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5]]
 for i in ΙMAGES_names:
  run_visualization(i)
-# run_visualization(ΙMAGES_names[0])
+
