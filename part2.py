@@ -49,6 +49,8 @@ class DeepLabModel(object):
     writer = tf.summary.FileWriter('C:/Users/oem/Documents/GitHub/crashcourse-tensorflow')
     writer.add_graph(self.sess.graph)
     
+    #Εκτύπωση όλων των κόμβων του νευρωνικού δικτύου ώστε να επιλεγεί
+    #το κατάλληλο layer για τα βαθιά χαρακτηριστικά
     
     #array_of_operations=(self.sess.graph.get_operations())
     # print(type(array_of_operations))
@@ -145,8 +147,6 @@ MODEL = DeepLabModel(download_path)
 print('model loaded successfully!')
 
 
-SAMPLE_IMAGE = 'image1'  # @param ['image1', 'image2', 'image3']
-IMAGE_URL = ''  #@param {type:"string"}
 
 
 

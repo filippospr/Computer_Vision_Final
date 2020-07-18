@@ -48,12 +48,15 @@ class DeepLabModel(object):
     self.sess = tf.Session(graph=self.graph)
     writer = tf.summary.FileWriter('C:/Users/oem/Documents/GitHub/crashcourse-tensorflow')
     writer.add_graph(self.sess.graph)
-    # array_of_operations=(self.sess.graph.get_operations())
+    
+    #Εκτύπωση όλων των κόμβων του νευρωνικού δικτύου ώστε να επιλεγεί
+    #το κατάλληλο layer για τα βαθιά χαρακτηριστικά
+    
+    #array_of_operations=(self.sess.graph.get_operations())
     # print(type(array_of_operations))
     # for i in array_of_operations:
     #   tmp=np.array(i.values())
     #   print(tmp)
-      
 
 
   def run(self, image):
@@ -83,57 +86,23 @@ class DeepLabModel(object):
     #Ανάλυση PCA στα deep feautures της εικόνας
     Xreduced = PCA(n_components=8).fit_transform(X)
 
-    #reshape the result of pca from 8 into 2 dimensions
+    #Κάνουμε reshape το αποτέλεσμα  του PCA ώστε να μειώσουμε τις διαστάσεις απο  8 σε 2 
     pca_res_reshaped=np.reshape(Xreduced, [deepfeats.shape[0]*deepfeats.shape[1], 8])
+
+    #Εκτελούμε τον αλγόριθμο kmeans στο αποτέλεσμα PCA για κ=2(τμήματα)
     kmeans = KMeans(n_clusters=2)
     kmeans.fit(pca_res_reshaped)
+    print(kmeans.labels_.shape)
+    
+    #Κάνουμε reshape τα labels του kmeans ωστε να μπορέσουμε να τα προβάλουμε με τη μορφή εικόνας
     reshaped_labels=np.reshape(kmeans.labels_,[deepfeats.shape[0],deepfeats.shape[1]])
     
     
-    return resized_image,reshaped_labels
+    return resized_image,kmeans.labels_
 
 
-def create_pascal_label_colormap():
-  """Creates a label colormap used in PASCAL VOC segmentation benchmark.
-
-  Returns:
-    A Colormap for visualizing segmentation results.
-  """
-  colormap = np.zeros((256, 3), dtype=int)
-  ind = np.arange(256, dtype=int)
-
-  for shift in reversed(range(8)):
-    for channel in range(3):
-      colormap[:, channel] |= ((ind >> channel) & 1) << shift
-    ind >>= 3
-
-  return colormap
 
 
-def label_to_color_image(label):
-  """Adds color defined by the dataset colormap to the label.
-
-  Args:
-    label: A 2D array with integer type, storing the segmentation label.
-
-  Returns:
-    result: A 2D array with floating type. The element of the array
-      is the color indexed by the corresponding element in the input label
-      to the PASCAL color map.
-
-  Raises:
-    ValueError: If label is not of rank 2 or its value is larger than color
-      map maximum entry.
-  """
-  if label.ndim != 2:
-    raise ValueError('Expect 2-D input label')
-
-  colormap = create_pascal_label_colormap()
-
-  if np.max(label) >= len(colormap):
-    raise ValueError('label value too large.')
-
-  return colormap[label]
 
 
 def vis_segmentation(image, seg_map):
@@ -161,7 +130,6 @@ LABEL_NAMES = np.asarray([
 ])
 
 FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
-FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
 
 MODEL_NAME = 'mobilenetv2_coco_voctrainaug'  # @param ['mobilenetv2_coco_voctrainaug', 'mobilenetv2_coco_voctrainval', 'xception_coco_voctrainaug', 'xception_coco_voctrainval']
 
@@ -191,8 +159,7 @@ MODEL = DeepLabModel(download_path)
 print('model loaded successfully!')
 
 
-SAMPLE_IMAGE = 'image1'  # @param ['image1', 'image2', 'image3']
-IMAGE_URL = ''  #@param {type:"string"}
+
 
 
 
