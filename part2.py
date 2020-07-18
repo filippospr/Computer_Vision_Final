@@ -48,7 +48,9 @@ class DeepLabModel(object):
     self.sess = tf.Session(graph=self.graph)
     writer = tf.summary.FileWriter('C:/Users/oem/Documents/GitHub/crashcourse-tensorflow')
     writer.add_graph(self.sess.graph)
-    array_of_operations=(self.sess.graph.get_operations())
+    
+    
+    #array_of_operations=(self.sess.graph.get_operations())
     # print(type(array_of_operations))
     # for i in array_of_operations:
     #   tmp=np.array(i.values())
@@ -74,58 +76,18 @@ class DeepLabModel(object):
         self.OUTPUT_TENSOR_NAME,
         feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
     
-    #find deepfeatures from middle layer of the graph
+    #Bρίσκουμε τα  βαθιά χαρακτηριστικά απο ενδιάμεσο στρώμα του νευρωνικού δικτύου
     deepfeats = batch_seg_map[0]
     N = deepfeats.shape[0]*deepfeats.shape[1]
     C = deepfeats.shape[-1]
     X = np.reshape(deepfeats, [N, C])
+
+    #Ανάλυση PCA στα βαθιά χαρακτηριστικά της εικόνας
     Xreduced = PCA(n_components=3).fit_transform(X)
     pca_reshaped=np.reshape(Xreduced, [deepfeats.shape[0], deepfeats.shape[1], 3])
-    print(pca_reshaped.shape)
+   
     return resized_image, pca_reshaped
 
-
-def create_pascal_label_colormap():
-  """Creates a label colormap used in PASCAL VOC segmentation benchmark.
-
-  Returns:
-    A Colormap for visualizing segmentation results.
-  """
-  colormap = np.zeros((256, 3), dtype=int)
-  ind = np.arange(256, dtype=int)
-
-  for shift in reversed(range(8)):
-    for channel in range(3):
-      colormap[:, channel] |= ((ind >> channel) & 1) << shift
-    ind >>= 3
-
-  return colormap
-
-
-def label_to_color_image(label):
-  """Adds color defined by the dataset colormap to the label.
-
-  Args:
-    label: A 2D array with integer type, storing the segmentation label.
-
-  Returns:
-    result: A 2D array with floating type. The element of the array
-      is the color indexed by the corresponding element in the input label
-      to the PASCAL color map.
-
-  Raises:
-    ValueError: If label is not of rank 2 or its value is larger than color
-      map maximum entry.
-  """
-  if label.ndim != 2:
-    raise ValueError('Expect 2-D input label')
-
-  colormap = create_pascal_label_colormap()
-
-  if np.max(label) >= len(colormap):
-    raise ValueError('label value too large.')
-
-  return colormap[label]
 
 
 def vis_segmentation(image, seg_map):
@@ -153,7 +115,7 @@ LABEL_NAMES = np.asarray([
 ])
 
 FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
-FULL_COLOR_MAP = label_to_color_image(FULL_LABEL_MAP)
+
 
 MODEL_NAME = 'mobilenetv2_coco_voctrainaug'  # @param ['mobilenetv2_coco_voctrainaug', 'mobilenetv2_coco_voctrainval', 'xception_coco_voctrainaug', 'xception_coco_voctrainval']
 
@@ -198,8 +160,8 @@ def run_visualization(image_name):
 
 
 
-#5 eikones ws parametroi mazi me to script
+#5 εικόνες ως παράμετροι του script
 ΙMAGES_names=[sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5]]
 for i in ΙMAGES_names:
  run_visualization(i)
-# run_visualization(ΙMAGES_names[0])
+

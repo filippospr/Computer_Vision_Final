@@ -74,15 +74,19 @@ class DeepLabModel(object):
         self.OUTPUT_TENSOR_NAME,
         feed_dict={self.INPUT_TENSOR_NAME: [np.asarray(resized_image)]})
     
-    #find deepfeatures from middle layer of the graph
+    #Εύρεση deep feautures απο ενδιάμεσο στρώμα του νευρωνικού δικτύου
     deepfeats = batch_seg_map[0]
     N = deepfeats.shape[0]*deepfeats.shape[1]
     C = deepfeats.shape[-1]
     X = np.reshape(deepfeats, [N, C])
+
+    #Ανάλυση PCA στα deep feautures της εικόνας
     Xreduced = PCA(n_components=8).fit_transform(X)
+
     #reshape the result of pca from 8 into 2 dimensions
     pca_res_reshaped=np.reshape(Xreduced, [deepfeats.shape[0]*deepfeats.shape[1], 8])
-    kmeans = KMeans(n_clusters=2).fit(pca_res_reshaped)
+    kmeans = KMeans(n_clusters=2)
+    kmeans.fit(pca_res_reshaped)
     reshaped_labels=np.reshape(kmeans.labels_,[deepfeats.shape[0],deepfeats.shape[1]])
     
     
@@ -145,7 +149,7 @@ def vis_segmentation(image, seg_map):
   plt.subplot(grid_spec[1])
   plt.imshow(seg_map)
   plt.axis('off')
-  plt.title('K-Means')
+  plt.title('K-Means result')
   
   plt.show()
 
@@ -201,8 +205,7 @@ def run_visualization(image_name):
   vis_segmentation(resized_im, seg_map)
 
 
-
-#5 eikones ws parametroi mazi me to script
+#5 εικόνες ως παράμετροι του script
 ΙMAGES_names=[sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5]]
 for i in ΙMAGES_names:
  run_visualization(i)
